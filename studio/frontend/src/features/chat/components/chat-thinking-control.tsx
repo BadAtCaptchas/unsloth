@@ -84,6 +84,7 @@ export function ChatThinkingControl({
       caps={caps}
       effort={effort}
       enabled={state.reasoningEnabled}
+      fastEnabled={fast.isFast}
       disabled={!state.params.checkpoint || state.modelLoading}
       side={side}
       onEnabledChange={changeThinking}

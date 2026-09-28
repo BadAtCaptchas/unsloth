@@ -3,7 +3,7 @@
 
 import { type ReactNode, useId, useRef, useState } from "react";
 import { MenuDismissGuard } from "@/lib/menu-dismiss-guard";
-import { ChevronDownIcon, RotateCcwIcon } from "lucide-react";
+import { ChevronDownIcon, RotateCcwIcon, ZapIcon } from "lucide-react";
 import { BulbIcon } from "@/lib/bulb-icon";
 import {
   Popover,
@@ -30,6 +30,7 @@ export interface ThinkingControlProps {
   caps: ThinkingCapabilities;
   effort: ReasoningEffortLevel;
   enabled: boolean;
+  fastEnabled?: boolean;
   disabled?: boolean;
   side?: "top" | "bottom";
   preserve?: boolean;
@@ -45,6 +46,7 @@ export function ThinkingControl({
   caps,
   effort,
   enabled,
+  fastEnabled = false,
   disabled,
   side = "top",
   preserve,
@@ -93,10 +95,13 @@ export function ThinkingControl({
           className="unsloth-thinking-pill"
           data-pill-label={label}
           data-active={active || preserve ? "true" : "false"}
-          aria-label={label}
+          aria-label={fastEnabled ? `${label} · Fast on` : label}
         >
           <BulbIcon className="size-4 shrink-0" />
           <span className="unsloth-thinking-label">{label}</span>
+          {fastEnabled ? (
+            <ZapIcon className="size-4 shrink-0" aria-hidden="true" data-fast-indicator="true" />
+          ) : null}
           <ChevronDownIcon
             className="unsloth-thinking-caret size-[calc(15px*var(--ui-space-scale,1))] shrink-0"
             aria-hidden="true"
