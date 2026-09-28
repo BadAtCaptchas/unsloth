@@ -3,6 +3,7 @@
 
 import { useSyncExternalStore } from "react";
 import { useShallow } from "zustand/react/shallow";
+import { ModelPricing } from "./model-pricing";
 import { ThinkingControl } from "./thinking-control";
 import {
   currentThinking,
@@ -35,9 +36,10 @@ export function ChatThinkingControl({
     useShallow((s) => [s.providers, s.connectionsEnabled]),
   );
   useSyncExternalStore(subscribeModelCatalog, modelCatalogVersion);
-  const { state, caps, effort, selection } = currentThinking();
+  const { state, caps, effort, selection, provider } = currentThinking();
   return (
     <ThinkingControl
+      footer={provider?.providerType === "openrouter" && selection ? <ModelPricing modelId={selection.modelId} /> : undefined}
       caps={caps}
       effort={effort}
       enabled={state.reasoningEnabled}

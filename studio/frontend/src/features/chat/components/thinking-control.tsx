@@ -107,7 +107,8 @@ export function ThinkingControl({
         side={side}
         align="end"
         sideOffset={8}
-        className="w-80 gap-4 rounded-2xl border border-border/60 p-4 shadow-lg"
+        collisionPadding={12}
+        className="w-80 max-h-[var(--radix-popover-content-available-height)] overflow-y-auto [&>*]:shrink-0 gap-4 rounded-2xl border border-border/60 p-4 shadow-lg"
         aria-label="Thinking settings"
       >
         {open ? <MenuDismissGuard triggerRef={triggerRef} /> : null}
