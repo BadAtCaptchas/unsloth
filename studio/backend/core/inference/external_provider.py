@@ -1476,8 +1476,8 @@ class ExternalProviderClient:
         forward lines verbatim; for Anthropic the native Messages API SSE is translated.
         ``top_k``, ``min_p``, ``repetition_penalty`` and ``presence_penalty`` are opt-in, forwarded
         only when supplied, since the frontend's capability map already filters them per provider.
-        ``fast_mode`` only applies to Anthropic Opus 5 / Opus 4.8 (silently dropped elsewhere); it
-        adds the beta header and ``speed: "fast"``."""
+        ``fast_mode`` uses Anthropic's native beta on supported direct models, or sends
+        ``speed: "fast"`` through OpenRouter after frontend endpoint discovery."""
         # tool_choice="none" hard-disables hosted/builtin tools across every provider so enabled_tools cannot
         # accidentally bill or leak.
         tool_choice_disabled = (
@@ -1731,6 +1731,8 @@ class ExternalProviderClient:
         if response_format is not None:
             body["response_format"] = response_format
 
+        if self.provider_type == "openrouter" and fast_mode:
+            body["speed"] = "fast"
         if self.provider_type == "openrouter":
             # Server-owned markers keep unknown charges visible across tool rounds and retries.
             yield f'data: {_json.dumps({"_openrouterAttempt": str(uuid4())})}'
@@ -1940,7 +1942,7 @@ class ExternalProviderClient:
                             if isinstance(accounting, dict) and isinstance(accounting.get("usage"), dict):
                                 # The shared tool loop sums tokens and withholds per-turn usage. Carry
                                 # the original receipt separately so generation ids and fractional charges survive.
-                                receipt = {key: accounting[key] for key in ("id", "model", "usage") if key in accounting}
+                                receipt = {key: accounting[key] for key in ("id", "model", "usage", "service_tier") if key in accounting}
                                 yield f'data: {_json.dumps({"_openrouterReceipt": receipt})}'
                         yield relayed
                     # Stream ended without [DONE] (some upstreams just close the connection). Emit tool_end so the

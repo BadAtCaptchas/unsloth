@@ -88,6 +88,8 @@ def openrouter_model_capabilities(raw: dict[str, Any]) -> dict[str, Any] | None:
 
     return {
         "id": model_id.strip(),
+        "name": raw.get("name") if isinstance(raw.get("name"), str) else None,
+        "description": raw.get("description") if isinstance(raw.get("description"), str) else None,
         "input_modalities": _string_list(architecture.get("input_modalities")),
         "reasoning": reasoning,
         "max_output_tokens": _positive_int(top_provider.get("max_completion_tokens")),

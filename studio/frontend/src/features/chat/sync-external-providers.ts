@@ -182,6 +182,8 @@ export function mergeLocalProviderOptions(
   const providerType = synced.providerType;
   return {
     ...synced,
+    fastPairs: providerType === "openrouter" ? existing.fastPairs : undefined,
+    autoDetectFastVariants: providerType === "openrouter" ? existing.autoDetectFastVariants !== false : undefined,
     enablePromptCaching: supportsProviderPromptCaching(providerType)
       ? (existing.enablePromptCaching ?? synced.enablePromptCaching ?? true)
       : undefined,

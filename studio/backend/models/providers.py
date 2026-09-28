@@ -172,6 +172,8 @@ class ProviderModelReasoningInfo(BaseModel):
 
 
 class ProviderModelCapabilityInfo(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
     id: str
     input_modalities: Optional[list[str]] = None
     reasoning: Optional[ProviderModelReasoningInfo] = None

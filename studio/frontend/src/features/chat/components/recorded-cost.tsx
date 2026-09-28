@@ -83,6 +83,13 @@ export function CostReceiptDetails({ custom }: { custom: unknown }) {
           <dl className="space-y-1 break-all pt-2">
             <dt>Generation</dt>
             <dd>{r.generationId ?? "Not received"}</dd>
+            <dt>Served tier</dt>
+            <dd>
+              {r.servedTier ??
+                (typeof r.usage?.service_tier === "string"
+                  ? r.usage.service_tier
+                  : "Not reported")}
+            </dd>
             <dt>Requested model</dt>
             <dd>{r.requestedModel}</dd>
             <dt>Served model</dt>

@@ -31,6 +31,7 @@ const UNITS: Record<string, [string, number, string]> = {
   completion: ["Output", 1e6, "1M tokens"],
   input_cache_read: ["Cache read", 1e6, "1M tokens"],
   input_cache_write: ["Cache write", 1e6, "1M tokens"],
+  input_cache_write_1h: ["Cache write (1 hour)", 1e6, "1M tokens"],
   internal_reasoning: ["Reasoning", 1e6, "1M tokens"],
   request: ["Request", 1, "request"],
   image: ["Image", 1, "image"],
@@ -58,13 +59,30 @@ function RateDetails({ rates }: { rates: Record<string, unknown> }) {
   );
 }
 
-export function ModelPricing({ modelId }: { modelId: string }) {
-  const pricing = usePricing(modelId);
+export function ModelPricing({
+  modelId,
+  pricingOverride,
+  source,
+  label = "Published rates",
+}: {
+  modelId: string;
+  pricingOverride?:
+    | (import("../lib/model-pricing").PublishedPricing & {
+        fetchedAt: number;
+        cached?: boolean;
+      })
+    | null;
+  source?: string;
+  label?: string;
+}) {
+  const catalogPricing = usePricing(modelId);
+  const pricing =
+    pricingOverride === undefined ? catalogPricing : pricingOverride;
   return (
     <details className="rounded-xl border border-border/70 bg-muted/30 text-xs text-muted-foreground">
       <summary className="cursor-pointer list-none rounded-xl p-3 focus-visible:outline-2 focus-visible:outline-ring">
         <span className="mb-2 flex justify-between">
-          Published rates{" "}
+          {label}{" "}
           <span>
             {pricing?.cached ? "Cached · " : ""}
             {pricing?.overrides?.length ? "Variable · " : ""}Details
@@ -115,12 +133,12 @@ export function ModelPricing({ modelId }: { modelId: string }) {
         )}
         <p>Routing and request conditions can affect the final charge.</p>
         <a
-          href="https://openrouter.ai/docs/guides/overview/models"
+          href={source ?? "https://openrouter.ai/docs/guides/overview/models"}
           target="_blank"
           rel="noreferrer"
           className="underline"
         >
-          Source: OpenRouter Models API
+          Source: OpenRouter catalog
         </a>
       </div>
     </details>

@@ -29,6 +29,8 @@ export const REASONING_EFFORT_SCALE = [
 ] as const satisfies readonly ReasoningEffortLevel[];
 
 export interface ModelCatalogEntry {
+  name?: string | null;
+  description?: string | null;
   pricing?: import("./lib/model-pricing").PublishedPricing | null;
   reasoning: boolean;
   efforts: readonly ReasoningEffortLevel[];
@@ -41,6 +43,7 @@ export interface ModelCatalogEntry {
 }
 
 interface LiveCatalogRecord {
+  metadataVersion?: number;
   refreshFailed?: boolean;
   fetchedAt: number;
   models: Record<string, ModelCatalogEntry>;
@@ -57,7 +60,7 @@ let modelsDevHydrated = false;
 const catalogListeners = new Set<() => void>();
 let catalogVersion = 0;
 
-function notifyCatalogChange(): void {
+export function modelCatalogChanged(): void {
   catalogVersion += 1;
   for (const listener of catalogListeners) listener();
 }
@@ -157,7 +160,7 @@ export function setModelsDevCatalog(catalog: ModelCatalogResponse): void {
   nameIndex = null;
   familyIndex = null;
   mergedNamespaces = null;
-  notifyCatalogChange();
+  modelCatalogChanged();
   if (!canUseStorage()) return;
   try {
     localStorage.setItem(MODELS_DEV_KEY, JSON.stringify(catalog));
@@ -215,6 +218,8 @@ function fromLiveModel(model: ProviderModelCapabilityInfo): ModelCatalogEntry {
   const reasoning = model.reasoning ?? null;
   const defaultEffort = reasoning?.default_effort;
   return {
+    name: model.name,
+    description: model.description,
     pricing: model.pricing,
     reasoning: reasoning != null,
     efforts: sortReasoningEfforts(reasoning?.supported_efforts ?? []),
@@ -258,21 +263,27 @@ export function setProviderModelCatalog(
     const id = model.id?.trim().toLowerCase();
     if (id) entries[id] = fromLiveModel(model);
   }
-  LIVE_CATALOG.set(providerType, { fetchedAt, models: entries });
+  LIVE_CATALOG.set(providerType, { fetchedAt, models: entries, metadataVersion: 1 });
   persistLiveCatalog();
-  notifyCatalogChange();
+  modelCatalogChanged();
 }
 
 export function clearProviderModelCatalog(providerType: string): void {
   hydrateLiveCatalog();
   if (!LIVE_CATALOG.delete(providerType)) return;
   persistLiveCatalog();
-  notifyCatalogChange();
+  modelCatalogChanged();
 }
 
 export function providerModelCatalogFetchedAt(providerType: string): number | null {
   hydrateLiveCatalog();
-  return LIVE_CATALOG.get(providerType)?.fetchedAt ?? null;
+  const record = LIVE_CATALOG.get(providerType);
+  return providerType === "openrouter" && record?.metadataVersion !== 1 ? null : record?.fetchedAt ?? null;
+}
+
+export function fastCandidateModels() {
+  hydrateLiveCatalog();
+  return Object.entries(LIVE_CATALOG.get("openrouter")?.models ?? {}).map(([id, entry]) => ({ id, name: entry.name, description: entry.description }));
 }
 
 /** Prices never use the capability resolver's alias/base-model fallbacks. */
@@ -293,7 +304,7 @@ export function markProviderCatalogRefreshFailed(providerType: string): void {
   if (!record) return;
   record.refreshFailed = true;
   persistLiveCatalog();
-  notifyCatalogChange();
+  modelCatalogChanged();
 }
 
 function lookupCandidates(providerType: string, modelId: string): string[] {

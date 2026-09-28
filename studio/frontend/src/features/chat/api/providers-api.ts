@@ -73,6 +73,8 @@ export interface ProviderModelReasoningInfo {
 }
 
 export interface ProviderModelCapabilityInfo {
+  name?: string | null;
+  description?: string | null;
   pricing?: import("../lib/model-pricing").PublishedPricing | null;
   id: string;
   input_modalities?: string[] | null;

@@ -712,8 +712,9 @@ export interface OpenAIChatChunkChoice {
 export interface OpenAIChatChunk {
   id?: string;
   model?: string;
+  service_tier?: string;
   _openrouterAttempt?: string;
-  _openrouterReceipt?: { id?: string; model?: string; usage?: Record<string, unknown> };
+  _openrouterReceipt?: { id?: string; model?: string; service_tier?: string; usage?: Record<string, unknown> };
   _usageAggregate?: boolean;
   choices?: OpenAIChatChunkChoice[];
   usage?: {

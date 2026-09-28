@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright 2026-present the Unsloth AI Inc. team. All rights reserved. See /studio/LICENSE.AGPL-3.0
 
-import { useSyncExternalStore } from "react";
+import { refreshOpenRouterFastTier } from "../lib/openrouter-fast-tier";
+import { useEffect, useSyncExternalStore } from "react";
 import { useShallow } from "zustand/react/shallow";
+import { FastControl } from "./fast-control";
+import { currentFast } from "../lib/fast-controls";
 import { ModelPricing } from "./model-pricing";
 import { ThinkingControl } from "./thinking-control";
 import {
@@ -20,6 +23,8 @@ export function ChatThinkingControl({
   useChatRuntimeStore(
     useShallow((s) => [
       s.params.checkpoint,
+      s.params.fastMode,
+      s.runningByThreadId,
       s.modelLoading,
       s.reasoningStyle,
       s.reasoningEffortLevels,
@@ -37,9 +42,45 @@ export function ChatThinkingControl({
   );
   useSyncExternalStore(subscribeModelCatalog, modelCatalogVersion);
   const { state, caps, effort, selection, provider } = currentThinking();
+  const fast = currentFast();
+  const modelId = selection?.modelId;
+  useEffect(() => {
+    if (provider?.providerType === "openrouter" && modelId)
+      void refreshOpenRouterFastTier(modelId);
+  }, [provider?.providerType, modelId]);
+  const fastPrice =
+    fast.isFast && fast.tier ? fast.tier.endpoints[0]?.pricing : undefined;
   return (
     <ThinkingControl
-      footer={provider?.providerType === "openrouter" && selection ? <ModelPricing modelId={selection.modelId} /> : undefined}
+      header={
+        fast.variant ||
+        fast.native ||
+        provider?.providerType === "openrouter" ? (
+          <FastControl />
+        ) : undefined
+      }
+      footer={
+        provider?.providerType === "openrouter" && selection ? (
+          <ModelPricing
+            modelId={selection.modelId}
+            label={
+              fast.isFast && fast.tier ? "Published Fast rates" : undefined
+            }
+            pricingOverride={
+              fast.isFast && fast.tier
+                ? fastPrice
+                  ? {
+                      ...fastPrice,
+                      fetchedAt: fast.tier.fetchedAt,
+                      cached: fast.tier.cached,
+                    }
+                  : null
+                : undefined
+            }
+            source={fast.isFast && fast.tier ? fast.tier.source : undefined}
+          />
+        ) : undefined
+      }
       caps={caps}
       effort={effort}
       enabled={state.reasoningEnabled}

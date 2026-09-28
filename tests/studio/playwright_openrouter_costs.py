@@ -25,7 +25,7 @@ with sync_playwright() as p:
             page.screenshot(path = str(out / f"rates-{theme}-{width}.png"))
             panel.locator("summary").click()
             expect(panel.get_by_text("min prompt tokens: 200000")).to_be_visible()
-            expect(panel.get_by_text("Source: OpenRouter Models API")).to_be_visible()
+            expect(panel.get_by_text("Source: OpenRouter catalog")).to_be_visible()
             page.wait_for_timeout(200)
             bounds = panel.bounding_box()
             assert bounds and bounds["x"] >= 0 and bounds["x"] + bounds["width"] <= width

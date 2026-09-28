@@ -9,6 +9,7 @@ export interface CostReceipt {
   generationId?: string;
   requestedModel: string;
   servedModel?: string;
+  servedTier?: string;
   cost: number | null;
   usage?: Record<string, unknown>;
 }
@@ -52,12 +53,14 @@ export function createCostRecorder(
     observe(chunk: {
       id?: string;
       model?: string;
+      service_tier?: string;
       usage?: Record<string, unknown>;
       choices?: unknown[];
       _openrouterAttempt?: string;
       _openrouterReceipt?: {
         id?: string;
         model?: string;
+        service_tier?: string;
         usage?: Record<string, unknown>;
       };
     }) {
@@ -90,6 +93,8 @@ export function createCostRecorder(
         receipt.generationId !== generationId ||
         (typeof chunk.model === "string" &&
           receipt.servedModel !== chunk.model) ||
+        (typeof chunk.service_tier === "string" &&
+          receipt.servedTier !== chunk.service_tier) ||
         !!chunk.usage;
       if (!receipt) {
         receipt = {
@@ -101,6 +106,8 @@ export function createCostRecorder(
         receipts.push(receipt);
       }
       receipt.generationId = generationId;
+      if (typeof chunk.service_tier === "string")
+        receipt.servedTier = chunk.service_tier;
       if (typeof chunk.model === "string") receipt.servedModel = chunk.model;
       if (chunk.usage) {
         receipt.usage = { ...receipt.usage, ...chunk.usage };
