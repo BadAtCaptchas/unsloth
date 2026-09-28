@@ -83,8 +83,8 @@ test("user pairs override detection, work for arbitrary identifiers, and can dis
   );
 });
 
-test("companion must be enabled and available on this connection", () => {
-  assert.match(
+test("available companions can be enabled directly by the Fast toggle", () => {
+  assert.equal(
     verifiedFastVariant(
       "openrouter",
       pair.standard,
@@ -92,7 +92,7 @@ test("companion must be enabled and available on this connection", () => {
       undefined,
       detected,
     )!.reason!,
-    /Enable vendor\/speed-v2/,
+    null,
   );
   assert.match(
     verifiedFastVariant(

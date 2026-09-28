@@ -8,6 +8,10 @@ import { currentThinking, changeThinking } from "./thinking-controls";
 import { fastCandidateModels } from "../model-catalog";
 import { openRouterFastTier } from "./openrouter-fast-tier";
 import { resolveFastPairs, verifiedFastVariant } from "./fast-variants";
+import { updateProviderConfig } from "../api/providers-api";
+import { toast } from "sonner";
+
+let enablingCompanion = false;
 
 export function currentFast() {
   const { state, selection, provider } = currentThinking();
@@ -46,12 +50,49 @@ export function currentFast() {
 }
 
 /** Both the header and shortcut use the picker callback, including its capability/default resolution. */
-export function toggleFast(selectModel: (checkpoint: string) => void): boolean {
+export async function toggleFast(
+  selectModel: (checkpoint: string) => void,
+): Promise<boolean> {
   const fast = currentFast();
-  if (fast.busy || !fast.connected) return false;
+  if (fast.busy || !fast.connected || enablingCompanion) return false;
   const before = currentThinking();
   if (fast.variant && fast.provider) {
     if (fast.variant.reason) return false;
+    if (!fast.variant.enabledCompanion) {
+      enablingCompanion = true;
+      try {
+        const models = [...fast.provider.models, fast.variant.destination];
+        await updateProviderConfig(fast.provider.id, { models });
+        const store = useExternalProvidersStore.getState();
+        store.setProviders(
+          store.providers.map((provider) =>
+            provider.id === fast.provider!.id
+              ? {
+                  ...provider,
+                  models: [
+                    ...new Set([...provider.models, fast.variant!.destination]),
+                  ],
+                  updatedAt: Date.now(),
+                }
+              : provider,
+          ),
+        );
+      } catch {
+        toast.error("Could not enable the Fast companion. Please try again.");
+        return false;
+      } finally {
+        enablingCompanion = false;
+      }
+      const current = currentFast();
+      if (
+        current.busy ||
+        !current.connected ||
+        current.provider?.id !== fast.provider.id ||
+        current.selection?.modelId !== fast.selection?.modelId ||
+        current.variant?.reason
+      )
+        return false;
+    }
     selectModel(
       buildExternalModelId(fast.provider.id, fast.variant.destination),
     );

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright 2026-present the Unsloth AI Inc. team. All rights reserved. See /studio/LICENSE.AGPL-3.0
 
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { ZapIcon } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 // eslint-disable-next-line no-restricted-imports -- Store-only access avoids importing the settings dialog and its chat cycle.
@@ -14,6 +14,7 @@ import { tokenRate } from "../lib/model-pricing";
 import { ModelPriceLine } from "./model-pricing";
 
 export function FastControl() {
+  const [enabling, setEnabling] = useState(false);
   const select = useContext(FastModelSelectionContext);
   const fast = currentFast();
   if (!fast.variant && !fast.native)
@@ -50,12 +51,20 @@ export function FastControl() {
           checked={!!fast.isFast}
           disabled={
             fast.busy ||
+            enabling ||
             !fast.connected ||
             !!reason ||
             (!!tierUnavailable && !fast.isFast) ||
             (!!fast.variant && !select)
           }
-          onCheckedChange={() => toggleFast(select ?? (() => {}))}
+          onCheckedChange={async () => {
+            setEnabling(true);
+            try {
+              await toggleFast(select ?? (() => {}));
+            } finally {
+              setEnabling(false);
+            }
+          }}
         />
       </label>
       {fast.variant ? (

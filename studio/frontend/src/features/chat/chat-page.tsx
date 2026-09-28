@@ -3642,9 +3642,9 @@ export function ChatPage({
   const fastModeSupported = !!currentFast().variant || currentFast().native;
   useShortcut(
     "toggleFastMode",
-    () => {
+    async () => {
       if (chatCovered()) return;
-      if (toggleFast(handleCheckpointChange)) {
+      if (await toggleFast(handleCheckpointChange)) {
         toast.success(currentFast().isFast ? "Fast mode on" : "Fast mode off");
       }
     },

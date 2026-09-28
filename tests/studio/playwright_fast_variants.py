@@ -13,6 +13,11 @@ base = "http://127.0.0.1:5418/smoke-thinking-controls.html?fast=1"
 with sync_playwright() as p:
     browser = p.chromium.launch()
     page = browser.new_page()
+    enabled_models = []
+    def enable_companion(route):
+        enabled_models.append(route.request.post_data_json["models"])
+        route.fulfill(json = {"id": "smoke", "models": enabled_models[-1]})
+    page.route("**/api/providers/smoke", enable_companion)
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))
     for theme in ("light", "dark"):
@@ -38,7 +43,6 @@ with sync_playwright() as p:
             page.keyboard.press("Escape")
             expect(page.get_by_role("button", name = "Thinking", exact = False)).to_be_focused()
     for query, explanation in (
-        ("gated=1", "Enable xiaomi/mimo-v2.6-pro-ultraspeed in connection settings"),
         ("unavailable=1", "Companion model is no longer available"),
         ("busy=1", "Available after generation finishes."),
     ):
@@ -46,6 +50,31 @@ with sync_playwright() as p:
         page.get_by_role("button", name = "Thinking", exact = False).click()
         expect(page.get_by_role("switch", name = "Fast mode")).to_be_disabled()
         expect(page.get_by_text(explanation, exact = False)).to_be_visible()
+    page.goto(f"{base}&gated=1")
+    page.get_by_role("button", name = "Thinking", exact = False).click()
+    fast = page.get_by_role("switch", name = "Fast mode")
+    expect(fast).to_be_enabled()
+    fast.click()
+    expect(fast).to_be_checked()
+    expect(page.get_by_label("Selected model")).to_contain_text("mimo-v2.6-pro-ultraspeed")
+    assert enabled_models == [["xiaomi/mimo-v2.6-pro", "xiaomi/mimo-v2.6-pro-ultraspeed"]]
+    fast.click()
+    expect(fast).not_to_be_checked()
+    fast.click()
+    expect(fast).to_be_checked()
+    assert len(enabled_models) == 1
+    page.goto(f"{base}&gated=1")
+    page.route("**/api/providers/smoke", lambda route: route.fulfill(status = 503, json = {"detail": "Temporary failure"}))
+    page.get_by_role("button", name = "Thinking", exact = False).click()
+    fast = page.get_by_role("switch", name = "Fast mode")
+    fast.click()
+    expect(fast).to_be_enabled()
+    expect(fast).not_to_be_checked()
+    expect(page.get_by_label("Selected model")).not_to_contain_text("ultraspeed")
+    page.unroute("**/api/providers/smoke")
+    page.route("**/api/providers/smoke", enable_companion)
+    fast.click()
+    expect(fast).to_be_checked()
     page.goto(f"{base}&direct=1")
     page.get_by_role("button", name = "Thinking", exact = False).click()
     expect(page.get_by_role("switch", name = "Fast mode")).to_be_checked()

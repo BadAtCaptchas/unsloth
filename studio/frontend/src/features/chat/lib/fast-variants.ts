@@ -139,11 +139,9 @@ export function verifiedFastVariant(
     destination,
     enabledCompanion,
     availableCompanion,
-    reason: !enabledCompanion
-      ? `Enable ${destination} in connection settings`
-      : !availableCompanion
-        ? "Companion model is no longer available in this connection. Refresh connection settings."
-        : null,
+    reason: !availableCompanion
+      ? "Companion model is no longer available in this connection. Refresh connection settings."
+      : null,
   };
 }
 
